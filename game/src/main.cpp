@@ -15,6 +15,8 @@ int main()
 
         DrawCircleV(GetMousePosition(), 20.0f, RED);
         DrawText("Connor Smiley 123456", 650, 750, 20, BLUE);
+        // If you want to be very accurate with formatting, use the MeasureText function!
+        //MeasureText("Connor Smiley 123456", 20);
 
         EndDrawing();
     }
