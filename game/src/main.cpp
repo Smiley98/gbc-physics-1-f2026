@@ -14,6 +14,7 @@ int main()
         ClearBackground(WHITE);
 
         DrawCircleV(GetMousePosition(), 20.0f, RED);
+        DrawText("Connor Smiley 123456", 650, 750, 20, BLUE);
 
         EndDrawing();
     }
