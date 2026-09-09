@@ -10,13 +10,19 @@ int main()
 
     while (!WindowShouldClose())
     {
-        BeginDrawing();
-        ClearBackground(WHITE);
 
-        DrawCircleV(GetMousePosition(), 20.0f, RED);
-        DrawText("Connor Smiley 123456", 650, 750, 20, BLUE);
-        // If you want to be very accurate with formatting, use the MeasureText function!
-        //MeasureText("Connor Smiley 123456", 20);
+
+        BeginDrawing();
+            ClearBackground(WHITE);
+
+            DrawCircle(50, 100, 25.0f, GREEN);
+            DrawCircle(150, 200, 25.0f, DARKGREEN);
+            DrawLine(50, 100, 150, 200, LIME);
+
+            DrawCircleV(GetMousePosition(), 20.0f, RED);
+            DrawText("Connor Smiley 123456", 650, 750, 20, BLUE);
+            // If you want to be very accurate with formatting, use the MeasureText function!
+            //MeasureText("Connor Smiley 123456", 20);
 
         EndDrawing();
     }
