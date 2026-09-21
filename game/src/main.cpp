@@ -16,6 +16,7 @@ int main()
     // You will most likely want to negate the launch angle so that your launch_velocity vector points upwards
     Vector2 example_position = { 400.0f, 400.0f };
     Vector2 example_direction = Vector2Rotate(Vector2UnitX, 30.0f * DEG2RAD);
+    float example_angle = Vector2Angle(Vector2UnitX, example_direction) * RAD2DEG;
 
     while (!WindowShouldClose())
     {
