@@ -2,8 +2,21 @@
 #include "raymath.h"
 #include "raygui.h"
 
+#include <array>
+#include <vector>
+
 // NOTE - You do NOT need to make a PhysicsSimulation class.
-// As long as you store gravity (within a class or a global variable), you will get full marks for step 2 of Lab Exercise 2).
+// LE2 step 2 has been done for you!
+
+struct PhysicsBody
+{
+    Vector2 position;
+    // Add velocity, drag, and mass to complete LE2 step 1
+    // (Mass and drag will NOT be used in this lab exercise)
+};
+
+constexpr Vector2 GRAVITY = { 0.0f, 9.81f };
+
 int main()
 {
     Vector2 launch_position = { 100.0f, 700.0f };
@@ -22,6 +35,16 @@ int main()
         // float hz = 1.0f / 60.0f; <-- dt should be approximately this value since we called SetTargetFPS(60);
 
         launch_velocity = Vector2Rotate(Vector2UnitX, -launch_angle * DEG2RAD) * launch_speed;
+
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            // LE2 step 3 - Add the ability to instantiate a physics body and launch it from launch_position at launch_velocity
+        }
+        
+        // Ensure motion is applied to physics bodies frame-after-frame using kinematics (position, velocity, and acceleration). Hint:
+        // acc = gravity * dt
+        // vel += acc * dt
+        // pos += vel * dt
 
         BeginDrawing();
             ClearBackground(WHITE);
