@@ -42,7 +42,7 @@ int main()
         }
         
         // Ensure motion is applied to physics bodies frame-after-frame using kinematics (position, velocity, and acceleration). Hint:
-        // acc = gravity * dt
+        // acc = gravity
         // vel += acc * dt
         // pos += vel * dt
 
