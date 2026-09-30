@@ -23,11 +23,27 @@ void Save()
     assert(result);
 }
 
+// Note that loading is NOT required for your assignment. This was just done as a bonus to help understand .csv files!
+void Load()
+{
+    int test_ints[5];
+    float test_floats[5];
+    char* buffer = LoadFileText("./Example.csv");
+    assert(buffer != nullptr);
+
+    int offset = 0;
+    offset += 2 * sscanf(buffer + offset, "%i,%i,%i,%i,%i\n", &test_ints[0], &test_ints[1], &test_ints[2], &test_ints[3], &test_ints[4]);
+    offset += 2 * sscanf(buffer + offset, "%f,%f,%f,%f,%f\n", &test_floats[0], &test_floats[1], &test_floats[2], &test_floats[3], &test_floats[4]);
+}
+
 int main()
 {
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
     SetTargetFPS(60);
+
+    Save();
+    Load();
 
     while (!WindowShouldClose())
     {
