@@ -4,6 +4,25 @@
 
 #include <array>
 #include <vector>
+#include <cassert>
+
+enum ColliderType
+{
+    COLLIDER_TYPE_NONE,
+    COLLIDER_TYPE_CIRCLE
+};
+
+struct Collider
+{
+    ColliderType type;
+    union
+    {
+        struct
+        {
+            float radius;
+        };
+    };
+};
 
 struct PhysicsBody
 {
@@ -11,13 +30,21 @@ struct PhysicsBody
     Vector2 vel;
     Vector2 acc;
 
+    float gravity_scale;
     float mass;
     float drag;
 
-    Color color;
+    Collider collider;
+    bool collision;
 };
 
 constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
+
+bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b)
+{
+    // Lab Exercise 3 TODO -- complete this function, VERY similar to raylib's CheckCollisionCircles function!
+    return false;
+}
 
 int main()
 {
@@ -28,6 +55,14 @@ int main()
     float launch_drag = 1.0f;
 
     std::vector<PhysicsBody> bodies;
+    {
+        PhysicsBody body{};
+        body.pos = { 400.0f, 400.0f };
+        body.vel = Vector2Zeros;
+        body.collider.type = COLLIDER_TYPE_CIRCLE;
+        body.collider.radius = 20.0f;
+        bodies.push_back(body);
+    }
 
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
@@ -44,16 +79,39 @@ int main()
             body.pos = launch_position;
             body.vel = launch_velocity;
             body.acc = GRAVITY;
+
+            body.gravity_scale = 1.0f;
             body.drag = launch_drag;
-            body.color = RED;
+            body.mass = 1.0f;
+
+            body.collider.type = COLLIDER_TYPE_CIRCLE;
+            body.collider.radius = 20.0f;
+            
             bodies.push_back(body);
         }
 
         for (PhysicsBody& body : bodies)
         {
-            body.vel += body.acc * dt;
+            body.vel += body.acc * body.gravity_scale * dt;
             body.vel *= powf(body.drag, dt);
             body.pos += body.vel * dt;
+
+            body.collision = false;
+        }
+
+        for (size_t i = 0; i < bodies.size(); i++)
+        {
+            for (size_t j = i + 1; j < bodies.size(); j++)
+            {
+                PhysicsBody& a = bodies[i];
+                PhysicsBody& b = bodies[j];
+
+                // Lab Exercise 3 TODO -- Replace CheckCollisionCircles with HitTestCircles, ensure the result is the same!
+                //bool collision = CheckCollisionCircles(a.pos, a.collider.radius, b.pos, b.collider.radius);
+                bool collision = HitTestCircles(a.pos, a.collider.radius, b.pos, b.collider.radius);
+                a.collision |= collision;
+                b.collision |= collision;
+            }
         }
 
         BeginDrawing();
@@ -75,8 +133,16 @@ int main()
             GuiSlider({ 10.0f, 410.0f, 160.0f, 80.0f }, "0", "800", &launch_position.y, 0.0f, GetScreenHeight());
             GuiSlider({ 10.0f, 530.0f, 160.0f, 80.0f }, "0.0", "1.0", &launch_drag, 0.0f, 1.0f);
 
-            for (PhysicsBody& body : bodies)
-                DrawCircleV(body.pos, 20.0f, body.color);
+            for (const PhysicsBody& body : bodies)
+            {
+                assert(body.collider.type != COLLIDER_TYPE_NONE);
+                if (body.collider.type == COLLIDER_TYPE_CIRCLE)
+                {
+                    Color color = body.collision ? RED : GREEN;
+                    DrawCircleV(body.pos, body.collider.radius, color);
+                }
+            }
+            
         EndDrawing();
     }
 
