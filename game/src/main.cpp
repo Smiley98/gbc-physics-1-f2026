@@ -5,17 +5,19 @@
 #include <array>
 #include <vector>
 
-// NOTE - You do NOT need to make a PhysicsSimulation class.
-// LE2 step 2 has been done for you!
-
 struct PhysicsBody
 {
-    Vector2 position;
-    // Add velocity, drag, and mass to complete LE2 step 1
-    // (Mass and drag will NOT be used in this lab exercise)
+    Vector2 pos;
+    Vector2 vel;
+    Vector2 acc;
+
+    float mass;
+    float drag;
+
+    Color color;
 };
 
-constexpr Vector2 GRAVITY = { 0.0f, 9.81f };
+constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
 
 int main()
 {
@@ -23,6 +25,9 @@ int main()
     Vector2 launch_velocity = Vector2Zeros;
     float launch_angle = 0.0f;
     float launch_speed = 100.0f;
+    float launch_drag = 1.0f;
+
+    std::vector<PhysicsBody> bodies;
 
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
@@ -30,21 +35,26 @@ int main()
 
     while (!WindowShouldClose())
     {
-        float tt = GetTime();       // Total time - time since the window was initialized
-        float dt = GetFrameTime();  // Frame (delta) time - time from start to end of previous frame (ideally 1.0f / 60.0f milliseconds)
-        // float hz = 1.0f / 60.0f; <-- dt should be approximately this value since we called SetTargetFPS(60);
-
+        float dt = GetFrameTime();
         launch_velocity = Vector2Rotate(Vector2UnitX, -launch_angle * DEG2RAD) * launch_speed;
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            // LE2 step 3 - Add the ability to instantiate a physics body and launch it from launch_position at launch_velocity
+            PhysicsBody body{};
+            body.pos = launch_position;
+            body.vel = launch_velocity;
+            body.acc = GRAVITY;
+            body.drag = launch_drag;
+            body.color = RED;
+            bodies.push_back(body);
         }
-        
-        // Ensure motion is applied to physics bodies frame-after-frame using kinematics (position, velocity, and acceleration). Hint:
-        // acc = gravity
-        // vel += acc * dt
-        // pos += vel * dt
+
+        for (PhysicsBody& body : bodies)
+        {
+            body.vel += body.acc * dt;
+            body.vel *= powf(body.drag, dt);
+            body.pos += body.vel * dt;
+        }
 
         BeginDrawing();
             ClearBackground(WHITE);
@@ -57,11 +67,16 @@ int main()
             DrawText(TextFormat("Launch Speed %2.1f", launch_speed), 10, 140, 20, DARKGRAY);
             DrawText(TextFormat("Launch Position X %2.1f", launch_speed), 10, 260, 20, DARKGRAY);
             DrawText(TextFormat("Launch Position Y %2.1f", launch_speed), 10, 380, 20, DARKGRAY);
+            DrawText(TextFormat("Launch Drag %2.1f", launch_drag), 10, 500, 20, DARKGRAY);
 
             GuiSlider({ 10.0f, 50.0f, 160.0f, 80.0f }, "0", "90", &launch_angle, 0.0f, 90.0f);
             GuiSlider({ 10.0f, 170.0f, 160.0f, 80.0f }, "10", "300", &launch_speed, 10.0f, 300.0f);
             GuiSlider({ 10.0f, 290.0f, 160.0f, 80.0f }, "0", "800", &launch_position.x, 0.0f, GetScreenWidth());
             GuiSlider({ 10.0f, 410.0f, 160.0f, 80.0f }, "0", "800", &launch_position.y, 0.0f, GetScreenHeight());
+            GuiSlider({ 10.0f, 530.0f, 160.0f, 80.0f }, "0.0", "1.0", &launch_drag, 0.0f, 1.0f);
+
+            for (PhysicsBody& body : bodies)
+                DrawCircleV(body.pos, 20.0f, body.color);
         EndDrawing();
     }
 
