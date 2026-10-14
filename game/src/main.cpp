@@ -9,7 +9,8 @@
 enum ColliderType
 {
     COLLIDER_TYPE_NONE,
-    COLLIDER_TYPE_CIRCLE
+    COLLIDER_TYPE_CIRCLE,
+    COLLIDER_TYPE_PLANE
 };
 
 struct Collider
@@ -20,6 +21,10 @@ struct Collider
         struct
         {
             float radius;
+        };
+        struct
+        {
+            Vector2 normal;
         };
     };
 };
@@ -46,14 +51,14 @@ bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b
     return false;
 }
 
+bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vector2 normal)
+{
+    // Lab Exercise 4 TODO -- complete this function
+    return false;
+}
+
 int main()
 {
-    Vector2 launch_position = { 100.0f, 700.0f };
-    Vector2 launch_velocity = Vector2Zeros;
-    float launch_angle = 0.0f;
-    float launch_speed = 100.0f;
-    float launch_drag = 1.0f;
-
     std::vector<PhysicsBody> bodies;
     {
         PhysicsBody body{};
@@ -71,24 +76,6 @@ int main()
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
-        launch_velocity = Vector2Rotate(Vector2UnitX, -launch_angle * DEG2RAD) * launch_speed;
-
-        if (IsKeyPressed(KEY_SPACE))
-        {
-            PhysicsBody body{};
-            body.pos = launch_position;
-            body.vel = launch_velocity;
-            body.acc = GRAVITY;
-
-            body.gravity_scale = 1.0f;
-            body.drag = launch_drag;
-            body.mass = 1.0f;
-
-            body.collider.type = COLLIDER_TYPE_CIRCLE;
-            body.collider.radius = 20.0f;
-            
-            bodies.push_back(body);
-        }
 
         for (PhysicsBody& body : bodies)
         {
@@ -117,21 +104,6 @@ int main()
         BeginDrawing();
             ClearBackground(WHITE);
             DrawFPS(720, 10);
-
-            DrawCircleV(launch_position, 20.0f, RED);
-            DrawLineEx(launch_position, launch_position + launch_velocity, 4.0f, ORANGE);
-
-            DrawText(TextFormat("Launch Angle %2.1f", launch_angle), 10, 10, 20, DARKGRAY);
-            DrawText(TextFormat("Launch Speed %2.1f", launch_speed), 10, 140, 20, DARKGRAY);
-            DrawText(TextFormat("Launch Position X %2.1f", launch_speed), 10, 260, 20, DARKGRAY);
-            DrawText(TextFormat("Launch Position Y %2.1f", launch_speed), 10, 380, 20, DARKGRAY);
-            DrawText(TextFormat("Launch Drag %2.1f", launch_drag), 10, 500, 20, DARKGRAY);
-
-            GuiSlider({ 10.0f, 50.0f, 160.0f, 80.0f }, "0", "90", &launch_angle, 0.0f, 90.0f);
-            GuiSlider({ 10.0f, 170.0f, 160.0f, 80.0f }, "10", "300", &launch_speed, 10.0f, 300.0f);
-            GuiSlider({ 10.0f, 290.0f, 160.0f, 80.0f }, "0", "800", &launch_position.x, 0.0f, GetScreenWidth());
-            GuiSlider({ 10.0f, 410.0f, 160.0f, 80.0f }, "0", "800", &launch_position.y, 0.0f, GetScreenHeight());
-            GuiSlider({ 10.0f, 530.0f, 160.0f, 80.0f }, "0.0", "1.0", &launch_drag, 0.0f, 1.0f);
 
             for (const PhysicsBody& body : bodies)
             {
