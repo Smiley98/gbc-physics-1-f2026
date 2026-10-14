@@ -102,10 +102,17 @@ int main()
 
             for (const PhysicsBody& body : bodies)
             {
-                if (body.collider.type == COLLIDER_TYPE_CIRCLE)
+                Color color = body.collision ? RED : GREEN;
+                const Collider& collider = body.collider;
+                if (collider.type == COLLIDER_TYPE_CIRCLE)
                 {
-                    Color color = body.collision ? RED : GREEN;
-                    DrawCircleV(body.pos, body.collider.radius, color);
+                    DrawCircleV(body.pos, collider.radius, color);
+                }
+                if (collider.type == COLLIDER_TYPE_PLANE)
+                {
+                    Vector2 perp = { collider.normal.y, -collider.normal.x };
+                    DrawLineEx(body.pos - perp * 100.0f, body.pos + perp * 100.0f, 4.0f, color);
+                    DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
                 }
             }
             
