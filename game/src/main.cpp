@@ -57,17 +57,12 @@ bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vec
     return false;
 }
 
+void InitBodies(std::vector<PhysicsBody>* bodies);
+
 int main()
 {
     std::vector<PhysicsBody> bodies;
-    {
-        PhysicsBody body{};
-        body.pos = { 400.0f, 400.0f };
-        body.vel = Vector2Zeros;
-        body.collider.type = COLLIDER_TYPE_CIRCLE;
-        body.collider.radius = 20.0f;
-        bodies.push_back(body);
-    }
+    InitBodies(&bodies);
 
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
@@ -79,6 +74,7 @@ int main()
 
         for (PhysicsBody& body : bodies)
         {
+            body.acc = GRAVITY;
             body.vel += body.acc * body.gravity_scale * dt;
             body.vel *= powf(body.drag, dt);
             body.pos += body.vel * dt;
@@ -93,9 +89,8 @@ int main()
                 PhysicsBody& a = bodies[i];
                 PhysicsBody& b = bodies[j];
 
-                // Lab Exercise 3 TODO -- Replace CheckCollisionCircles with HitTestCircles, ensure the result is the same!
-                //bool collision = CheckCollisionCircles(a.pos, a.collider.radius, b.pos, b.collider.radius);
-                bool collision = HitTestCircles(a.pos, a.collider.radius, b.pos, b.collider.radius);
+                // Lab Exercise 4 TODO -- ensure HitTestCirclePlane works correctly!
+                bool collision = HitTestCirclePlane(a.pos, a.collider.radius, b.pos, b.collider.normal);
                 a.collision |= collision;
                 b.collision |= collision;
             }
@@ -107,7 +102,6 @@ int main()
 
             for (const PhysicsBody& body : bodies)
             {
-                assert(body.collider.type != COLLIDER_TYPE_NONE);
                 if (body.collider.type == COLLIDER_TYPE_CIRCLE)
                 {
                     Color color = body.collision ? RED : GREEN;
@@ -121,4 +115,33 @@ int main()
     CloseAudioDevice();
     CloseWindow();
     return 0;
+}
+
+void InitBodies(std::vector<PhysicsBody>* bodies)
+{
+    {
+        PhysicsBody circle{};
+        circle.pos = { 400.0f, 400.0f };
+        circle.vel = Vector2Zeros;
+        circle.gravity_scale = 1.0f;
+        circle.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle.collider.radius = 20.0f;
+        bodies->push_back(circle);
+    }
+
+    {
+        PhysicsBody plane{};
+        plane.pos = { 400.0f, 600.0f };
+        plane.vel = Vector2Zeros;
+        plane.gravity_scale = 0.0f;
+        plane.collider.type = COLLIDER_TYPE_PLANE;
+        plane.collider.normal = Vector2UnitY * -1.0f;
+        bodies->push_back(plane);
+    }
+
+    for (const PhysicsBody& body : *bodies)
+    {
+        // Ensure data is valid before first body update
+        assert(body.collider.type != COLLIDER_TYPE_NONE);
+    }
 }
