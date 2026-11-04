@@ -53,8 +53,10 @@ bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b
 
 bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vector2 normal)
 {
-    // Lab Exercise 4 TODO -- complete this function
-    return false;
+    Vector2 to_circle = pos_circle - pos_plane;
+    float scalar_proj = Vector2DotProduct(to_circle, normal);
+    bool collision = scalar_proj <= radius;
+    return collision;
 }
 
 void DrawBody(PhysicsBody body);
@@ -93,7 +95,6 @@ int main()
                 PhysicsBody& a = bodies[i];
                 PhysicsBody& b = bodies[j];
 
-                // Lab Exercise 4 TODO -- ensure HitTestCirclePlane works correctly!
                 bool collision = HitTestCirclePlane(a.pos, a.collider.radius, b.pos, b.collider.normal);
                 a.collision |= collision;
                 b.collision |= collision;
@@ -103,7 +104,10 @@ int main()
         PhysicsBody& circle = bodies[0];
         PhysicsBody& plane = bodies[1];
 
-        circle.pos = GetMousePosition();
+        static bool use_mouse = true;
+        if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
+        if (use_mouse) circle.pos = GetMousePosition();
+
         if (IsKeyDown(KEY_E))
             plane.collider.normal = Vector2Rotate(plane.collider.normal,  100.0f * DEG2RAD * dt);
         if (IsKeyDown(KEY_Q))
@@ -138,7 +142,7 @@ void DrawBody(PhysicsBody body)
     if (collider.type == COLLIDER_TYPE_PLANE)
     {
         Vector2 perp = { collider.normal.y, -collider.normal.x };
-        DrawLineEx(body.pos - perp * 100.0f, body.pos + perp * 100.0f, 4.0f, color);
+        DrawLineEx(body.pos - perp * 1000.0f, body.pos + perp * 1000.0f, 4.0f, color);
         DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
     }
 }
@@ -154,8 +158,11 @@ void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
     float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
     bool collision = scalar_proj <= circle.collider.radius;
     Color test_color = collision ? RED : GREEN;
-    Vector2 proj = plane.pos + plane.collider.normal * Vector2DotProduct(to_circle, plane.collider.normal);
-    DrawCircleV(proj, circle.collider.radius, test_color);
+    Vector2 proj = plane.pos + plane.collider.normal * scalar_proj;
+    DrawLineEx(plane.pos, proj, 4.0f, PURPLE);
+    DrawLineEx(circle.pos, proj, 2.0f, VIOLET);
+    DrawCircleV(proj, 5.0f, ORANGE);
+    //DrawCircleV(proj, circle.collider.radius, test_color);
 
     // Lab Exercise 4 TODO - test if the distance from projection to plane position is less than the radius of circle
     // (Take this logic and generalize it into the HitTestCirclePlane function)!
@@ -170,7 +177,7 @@ void InitBodies(std::vector<PhysicsBody>* bodies)
         circle.pos = { 400.0f, 400.0f };
         circle.vel = Vector2Zeros;
 
-        circle.gravity_scale = 1.0f;
+        circle.gravity_scale = 0.0f;
         circle.drag = 1.0f;
 
         circle.collider.type = COLLIDER_TYPE_CIRCLE;
