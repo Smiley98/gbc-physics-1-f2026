@@ -47,8 +47,8 @@ constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
 
 bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b)
 {
-    // Lab Exercise 3 TODO -- complete this function, VERY similar to raylib's CheckCollisionCircles function!
-    return false;
+    bool result = CheckCollisionCircles(pos_a, radius_a, pos_b, radius_b);
+    return result;
 }
 
 bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vector2 normal)
@@ -56,6 +56,10 @@ bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vec
     // Lab Exercise 4 TODO -- complete this function
     return false;
 }
+
+void DrawBody(PhysicsBody body);
+void DrawProjCircleCircle(PhysicsBody a, PhysicsBody b);
+void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
 
 void InitBodies(std::vector<PhysicsBody>* bodies);
 
@@ -96,45 +100,24 @@ int main()
             }
         }
 
-        // Hard-coding data to visualize circle-plane projection
-        // In the future, we will make our nested collision loop handle all permutations of collision geometry arrangements (ie plane-circle vs circle-plane)
+        PhysicsBody& circle = bodies[0];
         PhysicsBody& plane = bodies[1];
 
+        circle.pos = GetMousePosition();
         if (IsKeyDown(KEY_E))
             plane.collider.normal = Vector2Rotate(plane.collider.normal,  100.0f * DEG2RAD * dt);
         if (IsKeyDown(KEY_Q))
             plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
 
-        Vector2 to_circle = GetMousePosition() - plane.pos;
-        float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
-        Color test_color = scalar_proj >= 20.0f ? BLUE : DARKBLUE;
-        Vector2 proj = plane.pos + plane.collider.normal * Vector2DotProduct(to_circle, plane.collider.normal);
-        // Lab Exercise 4 TODO - test if the distance from projection to plane position is less than the radius of circle
-        // (Take this logic and generalize it into the HitTestCirclePlane function)!
-        // If the falling green circle (NOT YOUR MOUSE) turns red upon collision with the plane, you've done LE4 correctly)!
-
         BeginDrawing();
             ClearBackground(WHITE);
             DrawFPS(720, 10);
 
-            DrawCircleV(GetMousePosition(), 20.0f, SKYBLUE);
-            DrawCircleV(proj, 20.0f, test_color);
-
             for (const PhysicsBody& body : bodies)
             {
-                Color color = body.collision ? RED : GREEN;
-                const Collider& collider = body.collider;
-                if (collider.type == COLLIDER_TYPE_CIRCLE)
-                {
-                    DrawCircleV(body.pos, collider.radius, color);
-                }
-                if (collider.type == COLLIDER_TYPE_PLANE)
-                {
-                    Vector2 perp = { collider.normal.y, -collider.normal.x };
-                    DrawLineEx(body.pos - perp * 100.0f, body.pos + perp * 100.0f, 4.0f, color);
-                    DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
-                }
+                DrawBody(body);
             }
+            DrawProjCirclePlane(circle, plane);
             
         EndDrawing();
     }
@@ -142,6 +125,41 @@ int main()
     CloseAudioDevice();
     CloseWindow();
     return 0;
+}
+
+void DrawBody(PhysicsBody body)
+{
+    Color color = body.collision ? RED : GREEN;
+    const Collider& collider = body.collider;
+    if (collider.type == COLLIDER_TYPE_CIRCLE)
+    {
+        DrawCircleV(body.pos, collider.radius, color);
+    }
+    if (collider.type == COLLIDER_TYPE_PLANE)
+    {
+        Vector2 perp = { collider.normal.y, -collider.normal.x };
+        DrawLineEx(body.pos - perp * 100.0f, body.pos + perp * 100.0f, 4.0f, color);
+        DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
+    }
+}
+
+void DrawProjCircleCircle(PhysicsBody a, PhysicsBody b)
+{
+
+}
+
+void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
+{
+    Vector2 to_circle = circle.pos - plane.pos;
+    float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
+    bool collision = scalar_proj <= circle.collider.radius;
+    Color test_color = collision ? RED : GREEN;
+    Vector2 proj = plane.pos + plane.collider.normal * Vector2DotProduct(to_circle, plane.collider.normal);
+    DrawCircleV(proj, circle.collider.radius, test_color);
+
+    // Lab Exercise 4 TODO - test if the distance from projection to plane position is less than the radius of circle
+    // (Take this logic and generalize it into the HitTestCirclePlane function)!
+    // If the falling green circle (NOT YOUR MOUSE) turns red upon collision with the plane, you've done LE4 correctly)!
 }
 
 void InitBodies(std::vector<PhysicsBody>* bodies)
