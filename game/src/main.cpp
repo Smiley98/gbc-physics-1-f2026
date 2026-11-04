@@ -60,7 +60,7 @@ bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vec
 }
 
 void DrawBody(PhysicsBody body);
-void DrawProjCircleCircle(PhysicsBody a, PhysicsBody b);
+void DrawProjCircles(PhysicsBody a, PhysicsBody b);
 void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
 
 void InitBodies(std::vector<PhysicsBody>* bodies);
@@ -95,23 +95,19 @@ int main()
                 PhysicsBody& a = bodies[i];
                 PhysicsBody& b = bodies[j];
 
-                bool collision = HitTestCirclePlane(a.pos, a.collider.radius, b.pos, b.collider.normal);
+                bool collision = HitTestCircles(a.pos, a.collider.radius, b.pos, b.collider.radius);
+                //bool collision = HitTestCirclePlane(a.pos, a.collider.radius, b.pos, b.collider.normal);
                 a.collision |= collision;
                 b.collision |= collision;
             }
         }
 
-        PhysicsBody& circle = bodies[0];
-        PhysicsBody& plane = bodies[1];
+        PhysicsBody& circle1 = bodies[0];
+        PhysicsBody& circle2 = bodies[1];
 
         static bool use_mouse = true;
         if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
-        if (use_mouse) circle.pos = GetMousePosition();
-
-        if (IsKeyDown(KEY_E))
-            plane.collider.normal = Vector2Rotate(plane.collider.normal,  100.0f * DEG2RAD * dt);
-        if (IsKeyDown(KEY_Q))
-            plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
+        if (use_mouse) circle1.pos = GetMousePosition();
 
         BeginDrawing();
             ClearBackground(WHITE);
@@ -121,7 +117,7 @@ int main()
             {
                 DrawBody(body);
             }
-            DrawProjCirclePlane(circle, plane);
+            DrawProjCircles(circle1, circle2);
             
         EndDrawing();
     }
@@ -147,9 +143,13 @@ void DrawBody(PhysicsBody body)
     }
 }
 
-void DrawProjCircleCircle(PhysicsBody a, PhysicsBody b)
+void DrawProjCircles(PhysicsBody a, PhysicsBody b)
 {
-
+    float len_ab = Vector2Length(b.pos - a.pos);
+    Vector2 dir_ab = Vector2Normalize(b.pos - a.pos);
+    DrawLineEx(a.pos, b.pos, 4.0f, PURPLE);
+    DrawLineEx(a.pos, a.pos + dir_ab * a.collider.radius, 3.0f, BLUE);
+    DrawLineEx(b.pos, b.pos - dir_ab * b.collider.radius, 3.0f, BLUE);
 }
 
 void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
@@ -173,11 +173,7 @@ void InitBodies(std::vector<PhysicsBody>* bodies)
 {
     {
         PhysicsBody circle{};
-
         circle.pos = { 400.0f, 400.0f };
-        circle.vel = Vector2Zeros;
-
-        circle.gravity_scale = 0.0f;
         circle.drag = 1.0f;
 
         circle.collider.type = COLLIDER_TYPE_CIRCLE;
@@ -187,13 +183,14 @@ void InitBodies(std::vector<PhysicsBody>* bodies)
     }
 
     {
-        PhysicsBody plane{};
-        plane.pos = { 400.0f, 600.0f };
-        plane.vel = Vector2Zeros;
-        plane.gravity_scale = 0.0f;
-        plane.collider.type = COLLIDER_TYPE_PLANE;
-        plane.collider.normal = Vector2UnitY * -1.0f;
-        bodies->push_back(plane);
+        PhysicsBody circle{};
+        circle.pos = { 400.0f, 200.0f };
+        circle.drag = 1.0f;
+
+        circle.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle.collider.radius = 20.0f;
+
+        bodies->push_back(circle);
     }
 
     for (const PhysicsBody& body : *bodies)
