@@ -93,23 +93,19 @@ void InitBodiesCirclePlane(std::vector<PhysicsBody>* bodies);
 
 int main()
 {
-    std::vector<PhysicsBody> circles;
-    std::vector<PhysicsBody> circle_plane;
-
-    InitBodiesCircles(&circles);
-    InitBodiesCirclePlane(&circle_plane);
-
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
     SetTargetFPS(60);
 
     int test = TEST_CIRCLES;
-    std::vector<PhysicsBody>* bodies = &circles;
+    std::vector<PhysicsBody> bodies;
+    InitBodiesCircles(&bodies);
+
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
 
-        for (PhysicsBody& body : *bodies)
+        for (PhysicsBody& body : bodies)
         {
             body.acc = GRAVITY;
             body.vel += body.acc * body.gravity_scale * dt;
@@ -122,18 +118,19 @@ int main()
         if (IsKeyPressed(KEY_T))
         {
             ++test %= 2;
+            bodies.clear();
             if (test == TEST_CIRCLES)
-                bodies = &circles;
+                InitBodiesCircles(&bodies);
             else if (test == TEST_CIRCLE_PLANE)
-                bodies = &circle_plane;
+                InitBodiesCirclePlane(&bodies);
         }
 
-        PhysicsBody& circle1 = (*bodies)[0];
+        PhysicsBody& circle1 = bodies[0];
         switch (test)
         {
             case TEST_CIRCLES:
             {
-                PhysicsBody& circle2 = (*bodies)[1];
+                PhysicsBody& circle2 = bodies[1];
                 static bool use_mouse = true;
                 if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
                 if (use_mouse) circle2.pos = GetMousePosition();
@@ -147,7 +144,7 @@ int main()
 
             case TEST_CIRCLE_PLANE:
             {
-                PhysicsBody& plane = (*bodies)[1];
+                PhysicsBody& plane = bodies[1];
                 if (IsKeyDown(KEY_E))
                     plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
                 if (IsKeyDown(KEY_Q))
@@ -165,18 +162,18 @@ int main()
             ClearBackground(WHITE);
             DrawFPS(720, 10);
 
-            for (const PhysicsBody& body : *bodies)
+            for (const PhysicsBody& body : bodies)
             {
                 DrawBody(body);
             }
 
             if (test == TEST_CIRCLES)
             {
-                DrawProjCircles((*bodies)[0], (*bodies)[1]);
+                DrawProjCircles(bodies[0], bodies[1]);
             }
             else
             {
-                DrawProjCirclePlane((*bodies)[0], (*bodies)[1]);
+                DrawProjCirclePlane(bodies[0], bodies[1]);
             }
             
         EndDrawing();
