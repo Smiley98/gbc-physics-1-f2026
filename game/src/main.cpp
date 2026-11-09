@@ -84,6 +84,14 @@ bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vec
     return collision;
 }
 
+void UpdateMotion(PhysicsBody* body, float dt)
+{
+    body->acc = GRAVITY;
+    body->vel += body->acc * body->gravity_scale * dt;
+    body->vel *= powf(body->drag, dt);
+    body->pos += body->vel * dt;
+}
+
 void DrawBody(PhysicsBody body);
 void DrawProjCircles(PhysicsBody a, PhysicsBody b);
 void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
@@ -113,26 +121,84 @@ enum SceneType : int
 
 class CircleTestScene : public Scene
 {
-    void Load() final {}
-    void Unload() final {}
+public:
+    void Load() final
+    {
+        {
+            PhysicsBody circle{};
+            circle.pos = { 400.0f, 400.0f };
+            circle.drag = 1.0f;
+            circle.collider.type = COLLIDER_TYPE_CIRCLE;
+            circle.collider.radius = 20.0f;
+            circle1 = circle;
+        }
 
-    void Update(float dt) final {}
+        {
+            PhysicsBody circle{};
+            circle.pos = { 400.0f, 200.0f };
+            circle.drag = 1.0f;
+            circle.collider.type = COLLIDER_TYPE_CIRCLE;
+            circle.collider.radius = 20.0f;
+            circle2 = circle;
+        }
+    }
+
+    void Update(float dt) final
+    {
+        circle1.collision = circle2.collision = false;
+        UpdateMotion(&circle1, dt);
+        UpdateMotion(&circle2, dt);
+
+        static bool use_mouse = true;
+        if (IsKeyPressed(KEY_M)) use_mouse = !use_mouse;
+        if (use_mouse) circle2.pos = GetMousePosition();
+
+        // LE5: Should be able to push circle1 around with the mouse if done correctly!
+        Vector2 mtv = Vector2Zeros;
+        bool collision = HitTestCircles(circle1.pos, circle1.collider.radius, circle2.pos, circle2.collider.radius, &mtv);
+        circle1.pos += mtv;
+        circle1.collision |= collision;
+        circle2.collision |= collision;
+    }
+
     void Draw() final
     {
-        DrawCircle(400, 400, 20.0f, RED);
+        DrawBody(circle1);
+        DrawBody(circle2);
+        DrawProjCircles(circle1, circle2);
     }
+
+private:
+    PhysicsBody circle1;
+    PhysicsBody circle2;
 };
 
 class CirclePlaneTestScene : public Scene
 {
-    void Load() final {}
-    void Unload() final {}
+public:
+    void Load() final
+    {
 
-    void Update(float dt) final {}
+    }
+
+    void Unload() final
+    {
+
+    }
+
+    void Update(float dt) final
+    {
+
+    }
+
     void Draw() final
     {
         DrawCircle(400, 400, 20.0f, GREEN);
     }
+
+private:
+    PhysicsBody circle;
+    PhysicsBody plane;
 };
 
 int main()
@@ -150,17 +216,11 @@ int main()
     scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
 
     int scene_index = SCENE_CIRCLES;
+    scenes[scene_index]->Load();
     SetWindowTitle(scene_names[scene_index]);
-
-    int test = TEST_CIRCLES;
-    std::vector<PhysicsBody> bodies;
-    InitBodiesCircles(&bodies);
 
     while (!WindowShouldClose())
     {
-        float dt = GetFrameTime();
-        scenes[scene_index]->Update(dt);
-
         if (IsKeyPressed(KEY_TAB))
         {
             scenes[scene_index]->Unload();
@@ -169,81 +229,75 @@ int main()
             SetWindowTitle(scene_names[scene_index]);
         }
 
-        for (PhysicsBody& body : bodies)
-        {
-            body.acc = GRAVITY;
-            body.vel += body.acc * body.gravity_scale * dt;
-            body.vel *= powf(body.drag, dt);
-            body.pos += body.vel * dt;
+        float dt = GetFrameTime();
+        scenes[scene_index]->Update(dt);
 
-            body.collision = false;
-        }
+        //if (IsKeyPressed(KEY_T))
+        //{
+        //    ++test %= 2;
+        //    bodies.clear();
+        //    if (test == TEST_CIRCLES)
+        //        InitBodiesCircles(&bodies);
+        //    else if (test == TEST_CIRCLE_PLANE)
+        //        InitBodiesCirclePlane(&bodies);
+        //}
 
-        if (IsKeyPressed(KEY_T))
-        {
-            ++test %= 2;
-            bodies.clear();
-            if (test == TEST_CIRCLES)
-                InitBodiesCircles(&bodies);
-            else if (test == TEST_CIRCLE_PLANE)
-                InitBodiesCirclePlane(&bodies);
-        }
-
-        PhysicsBody& circle1 = bodies[0];
-        switch (test)
-        {
-            case TEST_CIRCLES:
-            {
-                PhysicsBody& circle2 = bodies[1];
-                static bool use_mouse = true;
-                if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
-                if (use_mouse) circle2.pos = GetMousePosition();
-
-                // LE5: Should be able to push circle1 around with the mouse if done correctly!
-                Vector2 mtv = Vector2Zeros;
-                bool collision = HitTestCircles(circle1.pos, circle1.collider.radius, circle2.pos, circle2.collider.radius, &mtv);
-                circle1.pos += mtv;
-            }
-            break;
-
-            case TEST_CIRCLE_PLANE:
-            {
-                PhysicsBody& plane = bodies[1];
-                if (IsKeyDown(KEY_E))
-                    plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
-                if (IsKeyDown(KEY_Q))
-                    plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
-
-                // LE5: circle1 should roll off the plane if done correctly!
-                Vector2 mtv = Vector2Zeros;
-                bool collision = HitTestCirclePlane(circle1.pos, circle1.collider.radius, plane.pos, plane.collider.normal, &mtv);
-                circle1.pos += mtv;
-            }
-            break;
-        }
+        //PhysicsBody& circle1 = bodies[0];
+        //switch (test)
+        //{
+        //    case TEST_CIRCLES:
+        //    {
+        //        PhysicsBody& circle2 = bodies[1];
+        //        static bool use_mouse = true;
+        //        if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
+        //        if (use_mouse) circle2.pos = GetMousePosition();
+        //
+        //        // LE5: Should be able to push circle1 around with the mouse if done correctly!
+        //        Vector2 mtv = Vector2Zeros;
+        //        bool collision = HitTestCircles(circle1.pos, circle1.collider.radius, circle2.pos, circle2.collider.radius, &mtv);
+        //        circle1.pos += mtv;
+        //    }
+        //    break;
+        //
+        //    case TEST_CIRCLE_PLANE:
+        //    {
+        //        PhysicsBody& plane = bodies[1];
+        //        if (IsKeyDown(KEY_E))
+        //            plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
+        //        if (IsKeyDown(KEY_Q))
+        //            plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
+        //
+        //        // LE5: circle1 should roll off the plane if done correctly!
+        //        Vector2 mtv = Vector2Zeros;
+        //        bool collision = HitTestCirclePlane(circle1.pos, circle1.collider.radius, plane.pos, plane.collider.normal, &mtv);
+        //        circle1.pos += mtv;
+        //    }
+        //    break;
+        //}
 
         BeginDrawing();
             ClearBackground(WHITE);
             DrawFPS(720, 10);
 
-            for (const PhysicsBody& body : bodies)
-            {
-                DrawBody(body);
-            }
-
-            if (test == TEST_CIRCLES)
-            {
-                DrawProjCircles(bodies[0], bodies[1]);
-            }
-            else
-            {
-                DrawProjCirclePlane(bodies[0], bodies[1]);
-            }
+            //for (const PhysicsBody& body : bodies)
+            //{
+            //    DrawBody(body);
+            //}
+            //
+            //if (test == TEST_CIRCLES)
+            //{
+            //    DrawProjCircles(bodies[0], bodies[1]);
+            //}
+            //else
+            //{
+            //    DrawProjCirclePlane(bodies[0], bodies[1]);
+            //}
             scenes[scene_index]->Draw();
             
         EndDrawing();
     }
 
+    scenes[scene_index]->Unload();
     for (int i = 0; i < SCENE_COUNT; i++)
         delete scenes[i];
 
