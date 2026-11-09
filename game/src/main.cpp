@@ -141,10 +141,16 @@ int main()
     InitAudioDevice();
     SetTargetFPS(60);
 
+    const char* scene_names[SCENE_COUNT];
+    scene_names[SCENE_CIRCLES] = "Circle-Circle Test";
+    scene_names[SCENE_CIRCLE_PLANE] = "Circle-Plane Test";
+
     Scene* scenes[SCENE_COUNT];
     scenes[SCENE_CIRCLES] = new CircleTestScene;
     scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
-    int scene_index = SCENE_CIRCLE_PLANE;
+
+    int scene_index = SCENE_CIRCLES;
+    SetWindowTitle(scene_names[scene_index]);
 
     int test = TEST_CIRCLES;
     std::vector<PhysicsBody> bodies;
@@ -153,12 +159,14 @@ int main()
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
-        Scene* scene = scenes[scene_index];
-        scene->Update(dt);
+        scenes[scene_index]->Update(dt);
 
         if (IsKeyPressed(KEY_TAB))
         {
+            scenes[scene_index]->Unload();
             ++scene_index %= SCENE_COUNT;
+            scenes[scene_index]->Load();
+            SetWindowTitle(scene_names[scene_index]);
         }
 
         for (PhysicsBody& body : bodies)
@@ -231,7 +239,7 @@ int main()
             {
                 DrawProjCirclePlane(bodies[0], bodies[1]);
             }
-            scene->Draw();
+            scenes[scene_index]->Draw();
             
         EndDrawing();
     }
