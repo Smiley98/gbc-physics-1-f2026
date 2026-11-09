@@ -96,9 +96,6 @@ void DrawBody(PhysicsBody body);
 void DrawProjCircles(PhysicsBody a, PhysicsBody b);
 void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
 
-void InitBodiesCircles(std::vector<PhysicsBody>* bodies);
-void InitBodiesCirclePlane(std::vector<PhysicsBody>* bodies);
-
 class Scene
 {
 public:
@@ -124,23 +121,17 @@ class CircleTestScene : public Scene
 public:
     void Load() final
     {
-        {
-            PhysicsBody circle{};
-            circle.pos = { 400.0f, 400.0f };
-            circle.drag = 1.0f;
-            circle.collider.type = COLLIDER_TYPE_CIRCLE;
-            circle.collider.radius = 20.0f;
-            circle1 = circle;
-        }
+        circle1 = {};
+        circle1.pos = { 400.0f, 400.0f };
+        circle1.drag = 1.0f;
+        circle1.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle1.collider.radius = 20.0f;
 
-        {
-            PhysicsBody circle{};
-            circle.pos = { 400.0f, 200.0f };
-            circle.drag = 1.0f;
-            circle.collider.type = COLLIDER_TYPE_CIRCLE;
-            circle.collider.radius = 20.0f;
-            circle2 = circle;
-        }
+        circle2 = {};
+        circle2.pos = { 400.0f, 200.0f };
+        circle2.drag = 1.0f;
+        circle2.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle2.collider.radius = 20.0f;
     }
 
     void Update(float dt) final
@@ -178,22 +169,42 @@ class CirclePlaneTestScene : public Scene
 public:
     void Load() final
     {
+        circle = {};
+        circle.pos = { 400.0f, 400.0f };
+        circle.gravity_scale = 1.0f;
+        circle.drag = 1.0f;
+        circle.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle.collider.radius = 20.0f;
 
-    }
-
-    void Unload() final
-    {
-
+        plane = {};
+        plane.pos = { 400.0f, 600.0f };
+        plane.collider.type = COLLIDER_TYPE_PLANE;
+        plane.collider.normal = Vector2Rotate(Vector2UnitX, -45.0F * DEG2RAD);
     }
 
     void Update(float dt) final
     {
+        circle.collision = plane.collision = false;
+        UpdateMotion(&circle, dt);
+        UpdateMotion(&plane, dt);
 
+        if (IsKeyDown(KEY_E))
+            plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
+        if (IsKeyDown(KEY_Q))
+            plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
+
+        Vector2 mtv = Vector2Zeros;
+        bool collision = HitTestCirclePlane(circle.pos, circle.collider.radius, plane.pos, plane.collider.normal, &mtv);
+        circle.pos += mtv;
+        circle.collision |= collision;
+        plane.collision |= collision;
     }
 
     void Draw() final
     {
-        DrawCircle(400, 400, 20.0f, GREEN);
+        DrawBody(circle);
+        DrawBody(plane);
+        DrawProjCirclePlane(circle, plane);
     }
 
 private:
@@ -232,68 +243,10 @@ int main()
         float dt = GetFrameTime();
         scenes[scene_index]->Update(dt);
 
-        //if (IsKeyPressed(KEY_T))
-        //{
-        //    ++test %= 2;
-        //    bodies.clear();
-        //    if (test == TEST_CIRCLES)
-        //        InitBodiesCircles(&bodies);
-        //    else if (test == TEST_CIRCLE_PLANE)
-        //        InitBodiesCirclePlane(&bodies);
-        //}
-
-        //PhysicsBody& circle1 = bodies[0];
-        //switch (test)
-        //{
-        //    case TEST_CIRCLES:
-        //    {
-        //        PhysicsBody& circle2 = bodies[1];
-        //        static bool use_mouse = true;
-        //        if (IsKeyPressed(KEY_TAB)) use_mouse = !use_mouse;
-        //        if (use_mouse) circle2.pos = GetMousePosition();
-        //
-        //        // LE5: Should be able to push circle1 around with the mouse if done correctly!
-        //        Vector2 mtv = Vector2Zeros;
-        //        bool collision = HitTestCircles(circle1.pos, circle1.collider.radius, circle2.pos, circle2.collider.radius, &mtv);
-        //        circle1.pos += mtv;
-        //    }
-        //    break;
-        //
-        //    case TEST_CIRCLE_PLANE:
-        //    {
-        //        PhysicsBody& plane = bodies[1];
-        //        if (IsKeyDown(KEY_E))
-        //            plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
-        //        if (IsKeyDown(KEY_Q))
-        //            plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
-        //
-        //        // LE5: circle1 should roll off the plane if done correctly!
-        //        Vector2 mtv = Vector2Zeros;
-        //        bool collision = HitTestCirclePlane(circle1.pos, circle1.collider.radius, plane.pos, plane.collider.normal, &mtv);
-        //        circle1.pos += mtv;
-        //    }
-        //    break;
-        //}
-
         BeginDrawing();
             ClearBackground(WHITE);
             DrawFPS(720, 10);
-
-            //for (const PhysicsBody& body : bodies)
-            //{
-            //    DrawBody(body);
-            //}
-            //
-            //if (test == TEST_CIRCLES)
-            //{
-            //    DrawProjCircles(bodies[0], bodies[1]);
-            //}
-            //else
-            //{
-            //    DrawProjCirclePlane(bodies[0], bodies[1]);
-            //}
             scenes[scene_index]->Draw();
-            
         EndDrawing();
     }
 
@@ -341,58 +294,4 @@ void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
     DrawLineEx(plane.pos, proj, 4.0f, PURPLE);
     DrawLineEx(circle.pos, proj, 2.0f, VIOLET);
     DrawCircleV(proj, 5.0f, ORANGE);
-}
-
-void InitBodiesCircles(std::vector<PhysicsBody>* bodies)
-{
-    {
-        PhysicsBody circle{};
-        circle.pos = { 400.0f, 400.0f };
-        circle.drag = 1.0f;
-        circle.collider.type = COLLIDER_TYPE_CIRCLE;
-        circle.collider.radius = 20.0f;
-        bodies->push_back(circle);
-    }
-
-    {
-        PhysicsBody circle{};
-        circle.pos = { 400.0f, 200.0f };
-        circle.drag = 1.0f;
-        circle.collider.type = COLLIDER_TYPE_CIRCLE;
-        circle.collider.radius = 20.0f;
-        bodies->push_back(circle);
-    }
-
-    for (const PhysicsBody& body : *bodies)
-    {
-        // Ensure data is valid before first body update
-        assert(body.collider.type != COLLIDER_TYPE_NONE);
-    }
-}
-
-void InitBodiesCirclePlane(std::vector<PhysicsBody>* bodies)
-{
-    {
-        PhysicsBody circle{};
-        circle.pos = { 400.0f, 400.0f };
-        circle.gravity_scale = 1.0f;
-        circle.drag = 1.0f;
-        circle.collider.type = COLLIDER_TYPE_CIRCLE;
-        circle.collider.radius = 20.0f;
-        bodies->push_back(circle);
-    }
-
-    {
-        PhysicsBody plane{};
-        plane.pos = { 400.0f, 600.0f };
-        plane.collider.type = COLLIDER_TYPE_PLANE;
-        plane.collider.normal = Vector2Rotate(Vector2UnitX, -45.0F * DEG2RAD);
-        bodies->push_back(plane);
-    }
-
-    for (const PhysicsBody& body : *bodies)
-    {
-        // Ensure data is valid before first body update
-        assert(body.collider.type != COLLIDER_TYPE_NONE);
-    }
 }
