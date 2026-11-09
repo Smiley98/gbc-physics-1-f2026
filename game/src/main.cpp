@@ -144,7 +144,7 @@ int main()
     Scene* scenes[SCENE_COUNT];
     scenes[SCENE_CIRCLES] = new CircleTestScene;
     scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
-    SceneType scene_index = SCENE_CIRCLES;
+    int scene_index = SCENE_CIRCLE_PLANE;
 
     int test = TEST_CIRCLES;
     std::vector<PhysicsBody> bodies;
@@ -155,6 +155,11 @@ int main()
         float dt = GetFrameTime();
         Scene* scene = scenes[scene_index];
         scene->Update(dt);
+
+        if (IsKeyPressed(KEY_TAB))
+        {
+            ++scene_index %= SCENE_COUNT;
+        }
 
         for (PhysicsBody& body : bodies)
         {
