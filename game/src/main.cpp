@@ -116,15 +116,13 @@ public:
 
     virtual void Update(float dt) {}
     virtual void Draw() {}
-
-private:
-
 };
 
 enum SceneType : int
 {
     SCENE_CIRCLES,
     SCENE_CIRCLE_PLANE,
+    SCENE_BALL_PIT,
     SCENE_COUNT
 };
 
@@ -245,6 +243,70 @@ private:
     }
 };
 
+class BallPitScene : public Scene
+{
+public:
+    void Load() final
+    {
+        {
+            PhysicsBody wall_left{};
+            wall_left.pos = { 0.0f, 400.0f };
+            wall_left.collider.type = COLLIDER_TYPE_PLANE;
+            wall_left.collider.normal = Vector2UnitX;
+            bodies.push_back(wall_left);
+        }
+
+        {
+            PhysicsBody wall_right{};
+            wall_right.pos = { 800.0f, 400.0f };
+            wall_right.collider.type = COLLIDER_TYPE_PLANE;
+            wall_right.collider.normal = Vector2UnitX * -1.0f;
+            bodies.push_back(wall_right);
+        }
+
+        {
+            PhysicsBody wall_top{};
+            wall_top.pos = { 400.0f, 0.0f };
+            wall_top.collider.type = COLLIDER_TYPE_PLANE;
+            wall_top.collider.normal = Vector2UnitY;
+            bodies.push_back(wall_top);
+        }
+
+        {
+            PhysicsBody wall_bottom{};
+            wall_bottom.pos = { 400.0f, 800.0f };
+            wall_bottom.collider.type = COLLIDER_TYPE_PLANE;
+            wall_bottom.collider.normal = Vector2UnitY * -1.0f;
+            bodies.push_back(wall_bottom);
+        }
+    }
+
+    void Unload() final
+    {
+        bodies.clear();
+    }
+
+    void Update(float dt) final
+    {
+        for (PhysicsBody& body : bodies)
+        {
+            body.collision = false;
+            UpdateMotion(&body, dt);
+        }
+    }
+
+    void Draw() final
+    {
+        for (PhysicsBody& body : bodies)
+        {
+            DrawBody(body);
+        }
+    }
+
+private:
+    std::vector<PhysicsBody> bodies;
+};
+
 int main()
 {
     InitWindow(800, 800, "Physics-1");
@@ -254,12 +316,14 @@ int main()
     const char* scene_names[SCENE_COUNT];
     scene_names[SCENE_CIRCLES] = "Circle-Circle Test";
     scene_names[SCENE_CIRCLE_PLANE] = "Circle-Plane Test";
+    scene_names[SCENE_BALL_PIT] = "Ball Pit";
 
     Scene* scenes[SCENE_COUNT];
     scenes[SCENE_CIRCLES] = new CircleTestScene;
     scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
+    scenes[SCENE_BALL_PIT] = new BallPitScene;
 
-    int scene_index = SCENE_CIRCLES;
+    int scene_index = SCENE_COUNT - 1;
     scenes[scene_index]->Load();
     SetWindowTitle(scene_names[scene_index]);
 
