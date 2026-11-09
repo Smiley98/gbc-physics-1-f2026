@@ -47,6 +47,7 @@ struct PhysicsBody
 
     Collider collider;
     bool collision;
+    Color color;
 };
 
 constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
@@ -92,9 +93,8 @@ void UpdateMotion(PhysicsBody* body, float dt)
     body->pos += body->vel * dt;
 }
 
-void DrawBody(PhysicsBody body)
+void DrawBody(PhysicsBody body, Color color)
 {
-    Color color = body.collision ? RED : GREEN;
     const Collider& collider = body.collider;
     if (collider.type == COLLIDER_TYPE_CIRCLE)
     {
@@ -164,8 +164,8 @@ public:
 
     void Draw() final
     {
-        DrawBody(circle1);
-        DrawBody(circle2);
+        DrawBody(circle1, circle1.collision ? RED : GREEN);
+        DrawBody(circle2, circle2.collision ? RED : GREEN);
         DrawProjCircles(circle1, circle2);
     }
 
@@ -221,8 +221,8 @@ public:
 
     void Draw() final
     {
-        DrawBody(circle);
-        DrawBody(plane);
+        DrawBody(circle, circle.collision ? RED : GREEN);
+        DrawBody(plane, plane.collision ? RED : GREEN);
         DrawProjCirclePlane(circle, plane);
     }
 
@@ -302,6 +302,10 @@ public:
             circle.drag = 1.0f;
             circle.collider.type = COLLIDER_TYPE_CIRCLE;
             circle.collider.radius = 20.0f;
+            circle.color.r = GetRandomValue(0, 255);
+            circle.color.g = GetRandomValue(0, 255);
+            circle.color.b = GetRandomValue(0, 255);
+            circle.color.a = 255;
             bodies.push_back(circle);
         }
 
@@ -310,13 +314,43 @@ public:
             body.collision = false;
             UpdateMotion(&body, dt);
         }
+
+        // TODO for lab -- make collision loop nice
+        // (Note that some balls get stuck in walls because LE5 is not yet applying the MTV)
+        for (size_t i = 0; i < bodies.size(); i++)
+        {
+            for (size_t j = i; j < bodies.size(); j++)
+            {
+                // Extra practice: change ball colour whenever it hits a wall!
+                PhysicsBody& a = bodies[i];
+                PhysicsBody& b = bodies[j];
+        
+                if (a.collider.type == COLLIDER_TYPE_CIRCLE && b.collider.type == COLLIDER_TYPE_PLANE)
+                {
+                    bool collision = HitTestCirclePlane(a.pos, a.collider.radius, b.pos, b.collider.normal);
+                    if (collision) a.vel = Vector2Reflect(a.vel, b.collider.normal);
+                }
+                if (a.collider.type == COLLIDER_TYPE_PLANE && b.collider.type == COLLIDER_TYPE_CIRCLE)
+                {
+                    bool collision = HitTestCirclePlane(b.pos, b.collider.radius, a.pos, a.collider.normal);
+                    if (collision) b.vel = Vector2Reflect(b.vel, a.collider.normal);
+                }
+            }
+        }
+
+        // We could also do this a more naive way where we flip velocity direction based on the screen edge we're hitting,
+        // but we're physics programmers, therefore we used our plane colliders!!!
+        //for (PhysicsBody& body : bodies)
+        //{
+        //
+        //}
     }
 
     void Draw() final
     {
         for (PhysicsBody& body : bodies)
         {
-            DrawBody(body);
+            DrawBody(body, body.color);
         }
     }
 
