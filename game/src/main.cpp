@@ -288,6 +288,23 @@ public:
 
     void Update(float dt) final
     {
+        const float time_total = 0.5f;
+        static float time = 0.0f;
+        time += dt;
+        if (time >= time_total)
+        {
+            time = 0.0f;
+
+            PhysicsBody circle{};
+            circle.pos = { 400.0f, 400.0f };
+            circle.vel = Vector2Rotate(Vector2UnitY * -1.0f, GetRandomValue(-60, 60) * DEG2RAD) * 100.0f;
+            circle.gravity_scale = 1.0f;
+            circle.drag = 1.0f;
+            circle.collider.type = COLLIDER_TYPE_CIRCLE;
+            circle.collider.radius = 20.0f;
+            bodies.push_back(circle);
+        }
+
         for (PhysicsBody& body : bodies)
         {
             body.collision = false;
