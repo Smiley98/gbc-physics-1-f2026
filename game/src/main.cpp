@@ -91,11 +91,60 @@ void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
 void InitBodiesCircles(std::vector<PhysicsBody>* bodies);
 void InitBodiesCirclePlane(std::vector<PhysicsBody>* bodies);
 
+class Scene
+{
+public:
+    virtual void Load() {}
+    virtual void Unload() {}
+
+    virtual void Update(float dt) {}
+    virtual void Draw() {}
+
+private:
+
+};
+
+enum SceneType : int
+{
+    SCENE_CIRCLES,
+    SCENE_CIRCLE_PLANE,
+    SCENE_COUNT
+};
+
+class CircleTestScene : public Scene
+{
+    void Load() final {}
+    void Unload() final {}
+
+    void Update(float dt) final {}
+    void Draw() final
+    {
+        DrawCircle(400, 400, 20.0f, RED);
+    }
+};
+
+class CirclePlaneTestScene : public Scene
+{
+    void Load() final {}
+    void Unload() final {}
+
+    void Update(float dt) final {}
+    void Draw() final
+    {
+        DrawCircle(400, 400, 20.0f, GREEN);
+    }
+};
+
 int main()
 {
     InitWindow(800, 800, "Physics-1");
     InitAudioDevice();
     SetTargetFPS(60);
+
+    Scene* scenes[SCENE_COUNT];
+    scenes[SCENE_CIRCLES] = new CircleTestScene;
+    scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
+    SceneType scene_index = SCENE_CIRCLES;
 
     int test = TEST_CIRCLES;
     std::vector<PhysicsBody> bodies;
@@ -104,6 +153,8 @@ int main()
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+        Scene* scene = scenes[scene_index];
+        scene->Update(dt);
 
         for (PhysicsBody& body : bodies)
         {
@@ -175,9 +226,13 @@ int main()
             {
                 DrawProjCirclePlane(bodies[0], bodies[1]);
             }
+            scene->Draw();
             
         EndDrawing();
     }
+
+    for (int i = 0; i < SCENE_COUNT; i++)
+        delete scenes[i];
 
     CloseAudioDevice();
     CloseWindow();
