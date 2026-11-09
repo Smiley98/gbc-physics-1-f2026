@@ -92,9 +92,21 @@ void UpdateMotion(PhysicsBody* body, float dt)
     body->pos += body->vel * dt;
 }
 
-void DrawBody(PhysicsBody body);
-void DrawProjCircles(PhysicsBody a, PhysicsBody b);
-void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane);
+void DrawBody(PhysicsBody body)
+{
+    Color color = body.collision ? RED : GREEN;
+    const Collider& collider = body.collider;
+    if (collider.type == COLLIDER_TYPE_CIRCLE)
+    {
+        DrawCircleV(body.pos, collider.radius, color);
+    }
+    if (collider.type == COLLIDER_TYPE_PLANE)
+    {
+        Vector2 perp = { collider.normal.y, -collider.normal.x };
+        DrawLineEx(body.pos - perp * 1000.0f, body.pos + perp * 1000.0f, 4.0f, color);
+        DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
+    }
+}
 
 class Scene
 {
@@ -162,6 +174,15 @@ public:
 private:
     PhysicsBody circle1;
     PhysicsBody circle2;
+
+    void DrawProjCircles(PhysicsBody a, PhysicsBody b)
+    {
+        float len_ab = Vector2Length(b.pos - a.pos);
+        Vector2 dir_ab = Vector2Normalize(b.pos - a.pos);
+        DrawLineEx(a.pos, b.pos, 4.0f, PURPLE);
+        DrawLineEx(a.pos, a.pos + dir_ab * a.collider.radius, 3.0f, BLUE);
+        DrawLineEx(b.pos, b.pos - dir_ab * b.collider.radius, 3.0f, BLUE);
+    }
 };
 
 class CirclePlaneTestScene : public Scene
@@ -210,6 +231,18 @@ public:
 private:
     PhysicsBody circle;
     PhysicsBody plane;
+
+    void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
+    {
+        Vector2 to_circle = circle.pos - plane.pos;
+        float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
+        bool collision = scalar_proj <= circle.collider.radius;
+        Color test_color = collision ? RED : GREEN;
+        Vector2 proj = plane.pos + plane.collider.normal * scalar_proj;
+        DrawLineEx(plane.pos, proj, 4.0f, PURPLE);
+        DrawLineEx(circle.pos, proj, 2.0f, VIOLET);
+        DrawCircleV(proj, 5.0f, ORANGE);
+    }
 };
 
 int main()
@@ -257,41 +290,4 @@ int main()
     CloseAudioDevice();
     CloseWindow();
     return 0;
-}
-
-void DrawBody(PhysicsBody body)
-{
-    Color color = body.collision ? RED : GREEN;
-    const Collider& collider = body.collider;
-    if (collider.type == COLLIDER_TYPE_CIRCLE)
-    {
-        DrawCircleV(body.pos, collider.radius, color);
-    }
-    if (collider.type == COLLIDER_TYPE_PLANE)
-    {
-        Vector2 perp = { collider.normal.y, -collider.normal.x };
-        DrawLineEx(body.pos - perp * 1000.0f, body.pos + perp * 1000.0f, 4.0f, color);
-        DrawLineEx(body.pos, body.pos + collider.normal * 50.0f, 2.0f, ORANGE);
-    }
-}
-
-void DrawProjCircles(PhysicsBody a, PhysicsBody b)
-{
-    float len_ab = Vector2Length(b.pos - a.pos);
-    Vector2 dir_ab = Vector2Normalize(b.pos - a.pos);
-    DrawLineEx(a.pos, b.pos, 4.0f, PURPLE);
-    DrawLineEx(a.pos, a.pos + dir_ab * a.collider.radius, 3.0f, BLUE);
-    DrawLineEx(b.pos, b.pos - dir_ab * b.collider.radius, 3.0f, BLUE);
-}
-
-void DrawProjCirclePlane(PhysicsBody circle, PhysicsBody plane)
-{
-    Vector2 to_circle = circle.pos - plane.pos;
-    float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
-    bool collision = scalar_proj <= circle.collider.radius;
-    Color test_color = collision ? RED : GREEN;
-    Vector2 proj = plane.pos + plane.collider.normal * scalar_proj;
-    DrawLineEx(plane.pos, proj, 4.0f, PURPLE);
-    DrawLineEx(circle.pos, proj, 2.0f, VIOLET);
-    DrawCircleV(proj, 5.0f, ORANGE);
 }
