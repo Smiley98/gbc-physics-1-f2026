@@ -42,7 +42,7 @@ struct PhysicsBody
     Vector2 acc;
 
     float gravity_scale;
-    float mass;
+    float mass_inverse;
     float drag;
 
     Collider collider;
@@ -133,12 +133,14 @@ public:
     {
         circle1 = {};
         circle1.pos = { 400.0f, 400.0f };
+        circle1.mass_inverse = 1.0f;
         circle1.drag = 1.0f;
         circle1.collider.type = COLLIDER_TYPE_CIRCLE;
         circle1.collider.radius = 20.0f;
 
         circle2 = {};
         circle2.pos = { 400.0f, 200.0f };
+        circle2.mass_inverse = 1.0f;
         circle2.drag = 1.0f;
         circle2.collider.type = COLLIDER_TYPE_CIRCLE;
         circle2.collider.radius = 20.0f;
@@ -190,6 +192,7 @@ public:
     {
         circle = {};
         circle.pos = { 400.0f, 400.0f };
+        circle.mass_inverse = 1.0f;
         circle.gravity_scale = 1.0f;
         circle.drag = 1.0f;
         circle.collider.type = COLLIDER_TYPE_CIRCLE;
@@ -298,6 +301,7 @@ public:
             PhysicsBody circle{};
             circle.pos = { 400.0f, 400.0f };
             circle.vel = Vector2Rotate(Vector2UnitY * -1.0f, GetRandomValue(-60, 60) * DEG2RAD) * 100.0f;
+            circle.mass_inverse = 1.0f;
             circle.gravity_scale = 1.0f;
             circle.drag = 1.0f;
             circle.collider.type = COLLIDER_TYPE_CIRCLE;
