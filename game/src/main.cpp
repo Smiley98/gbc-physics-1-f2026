@@ -454,6 +454,12 @@ int main()
             SetWindowTitle(scene_names[scene_index]);
         }
 
+        if (IsKeyPressed(KEY_R))
+        {
+            scenes[scene_index]->Unload();
+            scenes[scene_index]->Load();
+        }
+
         // GetFrameTime() is unstable on frames 0 and 1
         if (frame_count >= 2)
         {
