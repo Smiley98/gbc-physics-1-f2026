@@ -87,11 +87,23 @@ void UpdateMotion(PhysicsBody* body, float dt)
     if (FloatEquals(body->mass, 0.0f)) return;
 
     // Gravity is the ONLY force we are applying automatically in our engine
-    Vector2 fg = GRAVITY * body->gravity_scale * body->mass; // F = ma
-    body->force += fg;
+    //Vector2 fg = GRAVITY * body->gravity_scale * body->mass; // F = ma
+    //body->force += fg;
 
     // Additional forces are accumulated manually
-    Vector2 acc = body->force / body->mass; // a = F / m
+    //Vector2 acc = body->force / body->mass; // a = F / m
+
+    // Can accumulate gravitational acceleration directly instead of deriving it from force of gravity;
+    // Above, we multiply g by m, only to divide F by m when calculating a. m / m cancels!
+    // 
+    // Intuitively, why does this work?
+    // Although heavier objects experience a larger force of gravity,
+    // they are also more resistant to change (due to having a larger mass)
+    // More gravitational force, but also more resistant to change = same gravitational *acceleration* for all objects.
+
+    // TODO -- revert to mass_inverse because it makes impulse calculations easier!
+    Vector2 acc = body->force / body->mass;
+    acc += GRAVITY * body->gravity_scale;
 
     body->vel += acc * dt;
     body->vel *= powf(body->drag, dt);
