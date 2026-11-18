@@ -39,10 +39,10 @@ struct PhysicsBody
 {
     Vector2 pos;
     Vector2 vel;
-    Vector2 acc;
+    Vector2 force;
 
     float gravity_scale;
-    float mass_inverse;
+    float mass;
     float drag;
 
     Collider collider;
@@ -83,10 +83,21 @@ bool HitTestCirclePlane(Vector2 pos_circle, float radius, Vector2 pos_plane, Vec
 
 void UpdateMotion(PhysicsBody* body, float dt)
 {
-    body->acc = GRAVITY;
-    body->vel += body->acc * body->gravity_scale * dt;
+    // Don't update static entities (plus you'd get a divide-by-zero error if you did)!
+    if (FloatEquals(body->mass, 0.0f)) return;
+
+    // Gravity is the ONLY force we are applying automatically in our engine
+    Vector2 fg = GRAVITY * body->gravity_scale * body->mass; // F = ma
+    body->force += fg;
+
+    // Additional forces are accumulated manually
+    Vector2 acc = body->force / body->mass; // a = F / m
+
+    body->vel += acc * dt;
     body->vel *= powf(body->drag, dt);
     body->pos += body->vel * dt;
+
+    body->force = Vector2Zeros;
 }
 
 void DrawBody(PhysicsBody body, Color color)
@@ -129,14 +140,14 @@ public:
     {
         circle1 = {};
         circle1.pos = { 400.0f, 400.0f };
-        circle1.mass_inverse = 1.0f;
+        circle1.mass = 1.0f;
         circle1.drag = 1.0f;
         circle1.collider.type = COLLIDER_TYPE_CIRCLE;
         circle1.collider.radius = 20.0f;
 
         circle2 = {};
         circle2.pos = { 400.0f, 600.0f };
-        circle2.mass_inverse = 1.0f;
+        circle2.mass = 1.0f;
         circle2.drag = 1.0f;
         circle2.collider.type = COLLIDER_TYPE_CIRCLE;
         circle2.collider.radius = 20.0f;
@@ -187,7 +198,7 @@ public:
     {
         circle = {};
         circle.pos = { 400.0f, 400.0f };
-        circle.mass_inverse = 1.0f;
+        circle.mass = 1.0f;
         circle.gravity_scale = 1.0f;
         circle.drag = 1.0f;
         circle.collider.type = COLLIDER_TYPE_CIRCLE;
@@ -296,7 +307,7 @@ public:
             PhysicsBody circle{};
             circle.pos = { 400.0f, 400.0f };
             circle.vel = Vector2Rotate(Vector2UnitY * -1.0f, GetRandomValue(-60, 60) * DEG2RAD) * 100.0f;
-            circle.mass_inverse = 1.0f;
+            circle.mass = 1.0f;
             circle.gravity_scale = 1.0f;
             circle.drag = 1.0f;
             circle.collider.type = COLLIDER_TYPE_CIRCLE;
@@ -325,7 +336,7 @@ public:
                 PhysicsBody* b = &bodies[j];
 
                 // No point in testing for collision between two static bodies
-                if (FloatEquals(a->mass_inverse, 0.0f), FloatEquals(b->mass_inverse, 0.0f)) continue;
+                if (FloatEquals(a->mass, 0.0f), FloatEquals(b->mass, 0.0f)) continue;
 
                 // Demo-specific hack so we don't deal with circle-circle collision
                 if (a->collider.type == COLLIDER_TYPE_CIRCLE && b->collider.type == COLLIDER_TYPE_CIRCLE) continue;
@@ -343,7 +354,7 @@ public:
                 a->collision = b->collision |= collision;
 
                 // Swap A and B if A is static because B MUST be dynamic
-                if (FloatEquals(a->mass_inverse, 0.0f))
+                if (FloatEquals(a->mass, 0.0f))
                 {
                     PhysicsBody* temp = a;  // Store the static entity
                     a = b;                  // A is now the dynamic entity
