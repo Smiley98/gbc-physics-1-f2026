@@ -58,10 +58,8 @@ bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b
     bool collision = CheckCollisionCircles(pos_a, radius_a, pos_b, radius_b);
     if (collision && mtv != nullptr)
     {
-        // 1) compute mtv magnitude by subtracting the distance between circles from the sum of their radii
-        // 2) ensure mtv direction points *from* B *to* A so the mtv resolves A *from* B
-        Vector2 direction = Vector2UnitY;
-        float magnitude = 1.0f;
+        Vector2 direction = Vector2Normalize(pos_a - pos_b);
+        float magnitude = (radius_a + radius_b) - Vector2Distance(pos_a, pos_b);
         *mtv = direction * magnitude;
     }
 
@@ -137,7 +135,7 @@ public:
         circle1.collider.radius = 20.0f;
 
         circle2 = {};
-        circle2.pos = { 400.0f, 200.0f };
+        circle2.pos = { 400.0f, 600.0f };
         circle2.mass_inverse = 1.0f;
         circle2.drag = 1.0f;
         circle2.collider.type = COLLIDER_TYPE_CIRCLE;
@@ -154,7 +152,6 @@ public:
         if (IsKeyPressed(KEY_M)) use_mouse = !use_mouse;
         if (use_mouse) circle2.pos = GetMousePosition();
 
-        // LE5: Should be able to push circle1 around with the mouse if done correctly!
         Vector2 mtv = Vector2Zeros;
         bool collision = HitTestCircles(circle1.pos, circle1.collider.radius, circle2.pos, circle2.collider.radius, &mtv);
         circle1.pos += mtv;
