@@ -29,6 +29,8 @@ struct Collider
     };
 };
 
+constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
+
 struct PhysicsBody
 {
     Vector2 pos;
@@ -38,6 +40,9 @@ struct PhysicsBody
     float gravity_scale;
     float mass_inverse;
     float drag;
+
+    float coeff_friction;
+    //float coeff_restitution; <-- LE7
 
     Collider collider;
     bool collision;
@@ -56,7 +61,12 @@ inline Vector2 BodyAcc(PhysicsBody body)
     return acc;
 }
 
-constexpr Vector2 GRAVITY = { 0.0f, 100.0f };
+inline Vector2 Vector2Tangent(Vector2 v, Vector2 normal)
+{
+    float proj = Vector2DotProduct(v, normal);
+    Vector2 tangent = v - normal * proj;
+    return tangent;
+}
 
 // MTV resolves A from B
 bool HitTestCircles(Vector2 pos_a, float radius_a, Vector2 pos_b, float radius_b, Vector2* mtv = nullptr)
@@ -426,9 +436,13 @@ public:
 
         circle_light_sticky = {};
         circle_light_sticky.pos = { 200.0f, 400.0f };
-        circle_light_sticky.mass_inverse = 1.0f / 1.0f;
+
+        circle_light_sticky.mass_inverse = 1.0f / 2.0f;
+        circle_light_sticky.coeff_friction = 0.1f;
+
         circle_light_sticky.gravity_scale = 1.0f;
         circle_light_sticky.drag = 1.0f;
+
         circle_light_sticky.collider.type = COLLIDER_TYPE_CIRCLE;
         circle_light_sticky.collider.radius = 20.0f;
 
@@ -451,18 +465,29 @@ public:
 
     void Draw() final
     {
-        DrawBody(circle_light_sticky, PURPLE);
-        DrawBody(plane, plane.collision ? RED : GREEN);
-        //DrawProjCirclePlane(circle_light, plane);
+        DrawBody(plane, LIGHTGRAY);
+
+        DrawBody(circle_light_sticky, RED);
+
+        Vector2 fg = GRAVITY / circle_light_sticky.mass_inverse;
+        Vector2 fn = plane.collider.normal * Vector2Length(fg);
+        Vector2 ff = Vector2Tangent(circle_light_sticky.vel * -1.0f, plane.collider.normal);
+        
+        DrawLineEx(circle_light_sticky.pos, circle_light_sticky.pos + fg, 4.0f, PURPLE);
+        DrawLineEx(circle_light_sticky.pos, circle_light_sticky.pos + fn, 4.0f, GREEN);
+        DrawLineEx(circle_light_sticky.pos, circle_light_sticky.pos + ff, 4.0f, GOLD);
     }
 
 private:
+
+    // LE6 TODO -- setup the remaining 3 circles accordingly and add them to the simulation!
     PhysicsBody circle_light_sticky;
     //PhysicsBody circle_light_grippy;
     //PhysicsBody circle_heavy_sticky;
     //PhysicsBody circle_heavy_grippy;
     PhysicsBody plane;
 
+    // LE6 TODO -- complete this function
     void DrawForces(PhysicsBody circle_light, PhysicsBody plane)
     {
 
