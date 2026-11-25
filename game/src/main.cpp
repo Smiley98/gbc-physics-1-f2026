@@ -129,6 +129,9 @@ enum SceneType : int
     SCENE_CIRCLES,
     SCENE_CIRCLE_PLANE,
     SCENE_BALL_PIT,
+    SCENE_FRICTION,
+    //SCENE_IMPULSE,    <-- Lab Exercise 7 
+    //SCENE_AABB,       <-- Lab Exercise 8
     SCENE_COUNT
 };
 
@@ -422,6 +425,106 @@ private:
     std::vector<PhysicsBody> bodies;
 };
 
+class FrictionScene : public Scene
+{
+public:
+    void Load() final
+    {
+        Vector2 launch_force = Vector2UnitY * -10000.0f;
+
+        circle_light = {};
+        circle_light.pos = { 200.0f, 400.0f };
+        circle_light.mass_inverse = 1.0f / 1.0f;
+        circle_light.gravity_scale = 1.0f;
+        circle_light.drag = 1.0f;
+        circle_light.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle_light.collider.radius = 20.0f;
+
+        circle_medium = {};
+        circle_medium.pos = { 400.0f, 400.0f };
+        circle_medium.mass_inverse = 1.0f / 2.0f;
+        circle_medium.gravity_scale = 1.0f;
+        circle_medium.drag = 1.0f;
+        circle_medium.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle_medium.collider.radius = 20.0f;
+
+        circle_heavy = {};
+        circle_heavy.pos = { 600.0f, 400.0f };
+        circle_heavy.mass_inverse = 1.0f / 5.0f;
+        circle_heavy.gravity_scale = 1.0f;
+        circle_heavy.drag = 1.0f;
+        circle_heavy.collider.type = COLLIDER_TYPE_CIRCLE;
+        circle_heavy.collider.radius = 20.0f;
+
+        circle_light.force += launch_force;
+        circle_medium.force += launch_force;
+        circle_heavy.force += launch_force;
+
+        plane = {};
+        plane.pos = { 400.0f, 600.0f };
+        plane.collider.type = COLLIDER_TYPE_PLANE;
+        plane.collider.normal = Vector2Rotate(Vector2UnitX, -75.0F * DEG2RAD);
+    }
+
+    void Update(float dt) final
+    {
+        circle_light.collision = circle_medium.collision = circle_heavy.collision = plane.collision = false;
+        UpdateMotion(&circle_light, dt);
+        UpdateMotion(&circle_medium, dt);
+        UpdateMotion(&circle_heavy, dt);
+        UpdateMotion(&plane, dt);
+
+        if (IsKeyDown(KEY_E))
+            plane.collider.normal = Vector2Rotate(plane.collider.normal, 100.0f * DEG2RAD * dt);
+        if (IsKeyDown(KEY_Q))
+            plane.collider.normal = Vector2Rotate(plane.collider.normal, -100.0f * DEG2RAD * dt);
+
+        Vector2 mtv_light = Vector2Zeros;
+        Vector2 mtv_medium = Vector2Zeros;
+        Vector2 mtv_heavy = Vector2Zeros;
+        bool collision_light = HitTestCirclePlane(circle_light.pos, circle_light.collider.radius, plane.pos, plane.collider.normal, &mtv_light);
+        bool collision_medium = HitTestCirclePlane(circle_medium.pos, circle_medium.collider.radius, plane.pos, plane.collider.normal, &mtv_medium);
+        bool collision_heavy = HitTestCirclePlane(circle_heavy.pos, circle_heavy.collider.radius, plane.pos, plane.collider.normal, &mtv_heavy);
+
+        circle_light.pos += mtv_light;
+        circle_medium.pos += mtv_medium;
+        circle_heavy.pos += mtv_heavy;
+
+        circle_light.collision |= collision_light;
+        circle_medium.collision |= collision_medium;
+        circle_heavy.collision |= collision_heavy;
+
+        plane.collision |= collision_light || collision_medium || collision_heavy;
+    }
+
+    void Draw() final
+    {
+        DrawBody(circle_light, PURPLE);
+        DrawBody(circle_medium, circle_medium.collision ? RED : GREEN);
+        DrawBody(circle_heavy, circle_heavy.collision ? RED : GREEN);
+        DrawBody(plane, plane.collision ? RED : GREEN);
+        //DrawProjCirclePlane(circle_light, plane);
+    }
+
+private:
+    PhysicsBody circle_light;
+    PhysicsBody circle_medium;
+    PhysicsBody circle_heavy;
+    PhysicsBody plane;
+
+    void DrawProjCirclePlane(PhysicsBody circle_light, PhysicsBody plane)
+    {
+        Vector2 to_circle = circle_light.pos - plane.pos;
+        float scalar_proj = Vector2DotProduct(to_circle, plane.collider.normal);
+        bool collision = scalar_proj <= circle_light.collider.radius;
+        Color test_color = collision ? RED : GREEN;
+        Vector2 proj = plane.pos + plane.collider.normal * scalar_proj;
+        DrawLineEx(plane.pos, proj, 4.0f, PURPLE);
+        DrawLineEx(circle_light.pos, proj, 2.0f, VIOLET);
+        DrawCircleV(proj, 5.0f, ORANGE);
+    }
+};
+
 int main()
 {
     InitWindow(800, 800, "Physics-1");
@@ -432,13 +535,15 @@ int main()
     scene_names[SCENE_CIRCLES] = "Circle-Circle Test";
     scene_names[SCENE_CIRCLE_PLANE] = "Circle-Plane Test";
     scene_names[SCENE_BALL_PIT] = "Ball Pit";
+    scene_names[SCENE_FRICTION] = "Friction Test";
 
     Scene* scenes[SCENE_COUNT];
     scenes[SCENE_CIRCLES] = new CircleTestScene;
     scenes[SCENE_CIRCLE_PLANE] = new CirclePlaneTestScene;
     scenes[SCENE_BALL_PIT] = new BallPitScene;
+    scenes[SCENE_FRICTION] = new FrictionScene;
 
-    int scene_index = SCENE_CIRCLE_PLANE;//SCENE_COUNT - 1;
+    int scene_index = SCENE_COUNT - 1;
     scenes[scene_index]->Load();
     SetWindowTitle(scene_names[scene_index]);
 
